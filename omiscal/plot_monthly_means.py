@@ -32,11 +32,21 @@ def main(args):
         ifiles = idate.strftime(args.ifile_template)
         log.info('Reading {}'.format(ifiles))
         ds = xr.open_mfdataset(ifiles) 
+        if args.year_change==1:
+            idate_ref = dt.datetime(idate.year-1,idate.month,1)
+            ifiles_ref = idate_ref.strftime(args.ifile_template)
+            log.info('reading {}'.format(ifiles_ref))
+            ds_ref = xr.open_mfdataset(ifiles_ref)
+        else:
+            ds_ref = None 
         ax = axgr[imonth]
-        cp = _make_plot(ax,proj,ds,idate)
+        cp = _make_plot(ax,proj,ds,idate,ds_ref)
         ds.close()
-    axgr.cbar_axes[0].colorbar(cp)
-    fig.suptitle(idate.strftime('Scale factors for %Y'))
+    lab = 'Year-over-year scale factor change' if args.year_change==1 else 'Emission scale factor'
+    cbar = axgr.cbar_axes[0].colorbar(cp)
+    cbar.ax.set_title(lab)
+    ttle = 'Year-over-year change in scale factor, %Y' if args.year_change==1 else 'Scale factors for %Y'
+    fig.suptitle(idate.strftime(ttle))
     fig.tight_layout(rect=[0, 0.03, 1, 0.97])
     ofile = idate.strftime(args.ofile_template) 
     plt.savefig(ofile,bbox_inches='tight')
@@ -45,15 +55,17 @@ def main(args):
     return
 
 
-def _make_plot(ax,proj,ds,anadate):
+def _make_plot(ax,proj,ds,anadate,ds_ref=None):
     log = logging.getLogger(__name__)
     _ = ax.coastlines()
     colormap = get_cmap('bwr')
     lons = np.arange(-180.,180.001,step=ds.lon.values[1]-ds.lon.values[0])
     lats = np.arange(-90.,90.001,step=ds.lat.values[1]-ds.lat.values[0])
-    cp = ax.pcolormesh(lons,lats,ds['scal'].mean(dim='time'),transform=proj,cmap=colormap,vmin=0.0,vmax=2.0)
-    #ax.set_title(anadate.strftime('%Y-%m-%d'))
-    #props = dict(boxstyle='round', facecolor='lightgray') #, alpha=0.5)
+    if ds_ref is not None:
+        vals = ds['scal'].mean(dim='time') / ds_ref['scal'].mean(dim='time')
+    else:
+        vals = ds['scal'].mean(dim='time')
+    cp = ax.pcolormesh(lons,lats,vals,transform=proj,cmap=colormap,vmin=0.0,vmax=2.0)
     props = dict(facecolor='white',pad=1.0) #, alpha=0.5)
     ax.text(x=0.0,y=-80.0,s=anadate.strftime('%B'),bbox=props,ha='center')
     return cp
@@ -65,6 +77,7 @@ def parse_args():
     p.add_argument('-n', '--nmonths',type=int,help='number of months',default=1)
     p.add_argument('-i', '--ifile_template',type=str,help='input file template',default='nc/%Y/omiscal_2x2.5_%Y%m*.nc')
     p.add_argument('-o', '--ofile_template',type=str,help='output file template',default='png/omiscal_monthly_%Y.png')
+    p.add_argument('-yoy', '--year_change',type=int,help='plot the year over year change, instead of the actual scale factor',default=0)
     return p.parse_args()
 
 

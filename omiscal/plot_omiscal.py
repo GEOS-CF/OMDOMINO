@@ -34,7 +34,6 @@ def main(args):
         proj = ccrs.PlateCarree()
         axes_class = (GeoAxes, dict(map_projection=proj))
         fig = plt.figure(figsize=(20,15))
-        #gs  = GridSpec(nrow,ncol)
         axgr = AxesGrid(fig, 111, axes_class=axes_class, nrows_ncols=(8,4), axes_pad=0.1, cbar_location='bottom',cbar_mode='single',cbar_pad=0.2,cbar_size='3%',label_mode='')
         days_in_month = monthrange(current.year,current.month)[1]
         days_in_month = 28 if current.month==2 else days_in_month
@@ -49,10 +48,18 @@ def main(args):
                 continue
             log.info('reading {}'.format(ifile))
             do = xr.open_dataset(ifile)
-            #ax = fig.add_subplot(gs[i,j],projection=proj)
-            cp = _make_plot(ax,proj,do,iday)
+            if args.year_change==1:
+                iday_ref = dt.datetime(iday.year-1,iday.month,iday.day)
+                ifile_ref = iday_ref.strftime(args.ifile_template)
+                log.info('reading {}'.format(ifile_ref))
+                do_ref = xr.open_dataset(ifile_ref)
+            else:
+                do_ref = None 
+            cp = _make_plot(ax,proj,do,iday,do_ref)
             do.close()
-        axgr.cbar_axes[0].colorbar(cp)
+        lab = 'Year-over-year scale factor change' if args.year_change==1 else 'Emission scale factor'
+        cbar = axgr.cbar_axes[0].colorbar(cp)
+        cbar.ax.set_title(lab)
         fig.suptitle(current.strftime('%B %Y'))
         fig.tight_layout(rect=[0, 0.03, 1, 0.97])
         ofile = current.strftime(args.ofile_template) 
@@ -62,15 +69,17 @@ def main(args):
     return
 
 
-def _make_plot(ax,proj,do,anadate):
+def _make_plot(ax,proj,do,anadate,do_ref=None):
     log = logging.getLogger(__name__)
     _ = ax.coastlines()
     colormap = get_cmap('bwr')
     lons = np.arange(-180.,180.001,step=do.lon.values[1]-do.lon.values[0])
     lats = np.arange(-90.,90.001,step=do.lat.values[1]-do.lat.values[0])
-    cp = ax.pcolormesh(lons,lats,do['scal'].values[0,:,:],transform=proj,cmap=colormap,vmin=0.0,vmax=2.0)
-    #ax.set_title(anadate.strftime('%Y-%m-%d'))
-    #props = dict(boxstyle='round', facecolor='lightgray') #, alpha=0.5)
+    if do_ref is not None:
+        vals = do['scal'].values[0,:,:] / do_ref['scal'].values[0,:,:]
+    else:
+        vals = do['scal'].values[0,:,:]
+    cp = ax.pcolormesh(lons,lats,vals,transform=proj,cmap=colormap,vmin=0.0,vmax=2.0)
     props = dict(facecolor='white',pad=1.0) #, alpha=0.5)
     ax.text(x=0.0,y=-80.0,s=anadate.strftime('%Y-%m-%d'),bbox=props,ha='center')
     return cp
@@ -83,6 +92,7 @@ def parse_args():
     p.add_argument('-n', '--nmonths',type=int,help='number of months',default=1)
     p.add_argument('-i', '--ifile_template',type=str,help='input file template',default='nc/%Y/omiscal_2x2.5_%Y%m%d.nc')
     p.add_argument('-o', '--ofile_template',type=str,help='output file template',default='png/%Y/omiscal_%Y%m.png')
+    p.add_argument('-yoy', '--year_change',type=int,help='plot the year over year change, instead of the actual scale factor',default=0)
     return p.parse_args()
 
 
