@@ -16,6 +16,10 @@ from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 
 
 def get_omiscal(args):
+    '''
+    Calculate (daily) scale factor based on gridded OMI NO2 column data,
+    as prepared by 'read_temis.py'.
+    '''
     # read template file 
     log = logging.getLogger(__name__)
     do = xr.open_dataset(args.template.replace('$res',args.res))
@@ -42,31 +46,13 @@ def get_omiscal(args):
     return
 
 
-def _make_plot(do,ofile_png,anadate):
-    log = logging.getLogger(__name__)
-    fig = plt.figure(figsize=(6,3))
-    gs  = GridSpec(1,1)
-    proj = ccrs.PlateCarree()
-    ax = fig.add_subplot(gs[0,0],projection=proj)
-    _ = ax.coastlines()
-    colormap = get_cmap('bwr')
-    #cp = ax.contourf(do.lon.values,do.lat.values,do['scal'].values[0,:,:],transform=proj,cmap=colormap,vmin=0.0,vmax=2.0)
-    lons = np.arange(-180.,180.001,step=do.lon.values[1]-do.lon.values[0])
-    lats = np.arange(-90.,90.001,step=do.lat.values[1]-do.lat.values[0])
-    cp = ax.pcolormesh(lons,lats,do['scal'].values[0,:,:],transform=proj,cmap=colormap,vmin=0.0,vmax=2.0)
-    #do['scal'].plot(vmin=args.minval,vmax=args.maxval)
-    cbar = fig.colorbar(cp,ax=ax,shrink=0.8)
-    fig.suptitle(anadate.strftime('%Y-%m-%d'))
-    fig.tight_layout(rect=[0, 0.03, 1, 0.97])
-    plt.savefig(ofile_png,bbox_inches='tight')
-    plt.close()
-    log.info('OMI scale factor map saved to {}'.format(ofile_png))
-    return
-
-
 def _calc_scal(args,anadate,do):
+    '''
+    Calculate spatial scale factors by normalizing current OMI NO2 column
+    with the equivalent values from a previous time period.
+    '''
     log = logging.getLogger(__name__)
-    # get background NO2 (from previous year)
+    # get background NO2 (from reference year)
     before = 14
     after  = 7
     for i in range(args.nyears):
@@ -102,6 +88,14 @@ def _calc_scal(args,anadate,do):
 
 
 def _get_average(args,start,end):
+    '''
+    Read gridded OMI NO2 files and compute average trop. NO2 column for the
+    specified time range. Only pixels with a valid observation (>0.0) are
+    used. Pixels with high active fire (according to QFED) are ignored. An
+    additional data mask (e.g., based on bottom up emissions or population
+    density) can be provided in the input argument list to filter out
+    additional cells.
+    '''
     log = logging.getLogger(__name__)
     days = [start + dt.timedelta(days=i) for i in range((end-start).days)]
     mfile = args.maskfile.replace('$res',args.res)
@@ -143,6 +137,28 @@ def _get_average(args,start,end):
     arr[mask] = arr[mask] / cnt[mask]
     arr[~mask] = np.nan
     return arr 
+
+
+def _make_plot(do,ofile_png,anadate):
+    log = logging.getLogger(__name__)
+    fig = plt.figure(figsize=(6,3))
+    gs  = GridSpec(1,1)
+    proj = ccrs.PlateCarree()
+    ax = fig.add_subplot(gs[0,0],projection=proj)
+    _ = ax.coastlines()
+    colormap = get_cmap('bwr')
+    #cp = ax.contourf(do.lon.values,do.lat.values,do['scal'].values[0,:,:],transform=proj,cmap=colormap,vmin=0.0,vmax=2.0)
+    lons = np.arange(-180.,180.001,step=do.lon.values[1]-do.lon.values[0])
+    lats = np.arange(-90.,90.001,step=do.lat.values[1]-do.lat.values[0])
+    cp = ax.pcolormesh(lons,lats,do['scal'].values[0,:,:],transform=proj,cmap=colormap,vmin=0.0,vmax=2.0)
+    #do['scal'].plot(vmin=args.minval,vmax=args.maxval)
+    cbar = fig.colorbar(cp,ax=ax,shrink=0.8)
+    fig.suptitle(anadate.strftime('%Y-%m-%d'))
+    fig.tight_layout(rect=[0, 0.03, 1, 0.97])
+    plt.savefig(ofile_png,bbox_inches='tight')
+    plt.close()
+    log.info('OMI scale factor map saved to {}'.format(ofile_png))
+    return
 
 
 def parse_args():

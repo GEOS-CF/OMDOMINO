@@ -1,4 +1,6 @@
 #!/bin/bash
+# Download DOMINO NO2 data, map it onto regular grid, and calculate
+# emission scale factors for yesterday and the day before
 
 # Yesterday
 Ymd=$(/bin/date -d "yesterday" +%Y%m%d)

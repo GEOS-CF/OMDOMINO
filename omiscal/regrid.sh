@@ -1,4 +1,6 @@
 #!/bin/bash
+# Simple utility script that regrids the 5x5 degree file to 2x2.5 degrees and adds some metadata to make the files readable by ExtData.
+
 ymd=$1
 ifile=$2
 ofile=$3

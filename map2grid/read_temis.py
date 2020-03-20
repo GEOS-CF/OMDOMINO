@@ -9,6 +9,10 @@ import sys
 
 
 def read_temis(args):
+    '''
+    Read native DOMINO OMI NO2 tropospheric column data and map it onto a
+    regular spaced grid.
+    '''
     # read template file 
     log = logging.getLogger(__name__)
     do = xr.open_dataset(args.template)

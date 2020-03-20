@@ -1,4 +1,6 @@
 #!/bin/bash
+# this is the driver routine to download and process DOMINO NO2 data
+
 odir="/discover/nobackup/projects/gmao/geos_cf_dev/gcc_inputs/OMISCAL/v0"
 srcdir="/discover/nobackup/projects/gmao/geos_cf_dev/obs/OMDOMINO"
 
