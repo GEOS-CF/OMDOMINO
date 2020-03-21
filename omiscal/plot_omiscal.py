@@ -7,6 +7,8 @@ import glob
 import argparse
 import sys
 import os
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib.cm import get_cmap

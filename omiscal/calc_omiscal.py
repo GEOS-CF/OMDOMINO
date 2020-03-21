@@ -7,12 +7,6 @@ import glob
 import argparse
 import sys
 import os
-import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
-from matplotlib.cm import get_cmap
-import cartopy.crs as ccrs
-import cartopy.feature
-from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 
 
 def get_omiscal(args):
@@ -140,6 +134,12 @@ def _get_average(args,start,end):
 
 
 def _make_plot(do,ofile_png,anadate):
+    import matplotlib.pyplot as plt
+    from matplotlib.gridspec import GridSpec
+    from matplotlib.cm import get_cmap
+    import cartopy.crs as ccrs
+    import cartopy.feature
+    from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
     log = logging.getLogger(__name__)
     fig = plt.figure(figsize=(6,3))
     gs  = GridSpec(1,1)

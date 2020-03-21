@@ -7,6 +7,8 @@ import glob
 import argparse
 import sys
 import os
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib.cm import get_cmap
@@ -16,11 +18,14 @@ from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 from calendar import monthrange
 from mpl_toolkits.axes_grid1 import AxesGrid
 from cartopy.mpl.geoaxes import GeoAxes
+from multiprocessing.pool import ThreadPool
+import dask
 
 
 def main(args):
     # read template file 
     log = logging.getLogger(__name__)
+    dask.config.set(pool=ThreadPool(10))
     nrow = 4
     ncol = 3
     proj = ccrs.PlateCarree()

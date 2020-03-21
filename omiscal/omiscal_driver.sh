@@ -24,10 +24,12 @@ ofile="${srcdir}/omiscal/nc/$Y/omiscal_2x2.5_${Ymd}.nc"
 if [ ! -d nc/$Y ]; then
     /bin/mkdir -p nc/$Y
 fi
-./regrid.sh $Ymd workdir/tmp.nc $ofile
-rm -r workdir/*.nc
+if [ -e workdir/tmp.nc ]; then
+ ./regrid.sh $Ymd workdir/tmp.nc $ofile
+ rm -r workdir/*.nc
+fi
 
-# update to latest scale factor 
+# copy (symbolic link) to data directory 
 if [ -e $ofile ]; then
     if [ -d ${odir}/${Y} ]; then
         /bin/mkdir -p ${odir}/${Y}
@@ -55,11 +57,4 @@ while [ "$d" != $end ]; do
  /bin/ln -s $ofile $tfile
  d=$(date -I -d "$d + 1 day")
 done
-
-# visualize
-if [ ! -d png/$Y ]; then
-    /bin/mkdir -p png/$Y
-fi
-/usr/local/other/python/GEOSpyD/2019.03_py3.7/2019-04-23/bin/python plot_omiscal.py -y $Y -m $M
-/usr/local/other/python/GEOSpyD/2019.03_py3.7/2019-04-23/bin/python plot_monthly_means.py -y $Y -n $M 
 
