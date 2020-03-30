@@ -1,7 +1,6 @@
 #!/bin/bash
 # this is the driver routine to download and process DOMINO NO2 data
 
-odir="/discover/nobackup/projects/gmao/geos_cf_dev/gcc_inputs/OMISCAL/v0"
 srcdir="/discover/nobackup/projects/gmao/geos_cf_dev/obs/OMDOMINO"
 
 # parse input arguments
@@ -28,33 +27,4 @@ if [ -e workdir/tmp.nc ]; then
  ./regrid.sh $Ymd workdir/tmp.nc $ofile
  rm -r workdir/*.nc
 fi
-
-# copy (symbolic link) to data directory 
-if [ -e $ofile ]; then
-    if [ -d ${odir}/${Y} ]; then
-        /bin/mkdir -p ${odir}/${Y}
-    fi
-    tfile="${odir}/${Y}/omiscal_2x2.5_${Ymd}.nc"
-    if [ -e $tfile ]; then
-         /bin/rm $tfile
-    fi
-    /bin/ln -s $ofile $tfile 
-fi 
-
-# also make a copy of 10 days into the future
-end=$(/bin/date -I -d "${Ymd} + 10 day")
-d=${Ymd}
-while [ "$d" != $end ]; do
- iYmd=$(date -d "$d" +%Y%m%d)
- iY=$(date -d "$d" +%Y)
- if [ -d ${odir}/${iY} ]; then
-  /bin/mkdir -p ${odir}/${iY}
- fi
- tfile="${odir}/${iY}/omiscal_2x2.5_${iYmd}.nc"
- if [ -e $tfile ]; then
-  /bin/rm $tfile
- fi
- /bin/ln -s $ofile $tfile
- d=$(date -I -d "$d + 1 day")
-done
 
