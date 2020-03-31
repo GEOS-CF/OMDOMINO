@@ -4,6 +4,7 @@
 
 # Output directory (for symbolic link)
 odir="/discover/nobackup/projects/gmao/geos_cf_dev/gcc_inputs/OMISCAL/v0"
+srcdir="/discover/nobackup/projects/gmao/geos_cf_dev/obs/OMDOMINO/omiscal/nc"
 
 # Yesterday
 Ymd=$(/bin/date -d "yesterday" +%Y%m%d)
@@ -19,7 +20,7 @@ pYmd=$(/bin/date -d $pd +%Y%m%d)
 ./omiscal_driver.sh $Ymd 1
 
 # Update symbolic links
-pofile="/discover/nobackup/projects/gmao/geos_cf_dev/obs/OMDOMINO/omiscal/nc/$pY/omiscal_2x2.5_${pYmd}.nc"
+pofile="${srcdir}/$pY/omiscal_2x2.5_${pYmd}.nc"
 if [ -e $pofile ]; then
  # Remove all symbolic links 
  end=$(/bin/date -I -d "${pYmd} + 11 day")
@@ -37,7 +38,7 @@ if [ -e $pofile ]; then
 fi
 
 # Set symbolic link for latest file 
-ofile="/discover/nobackup/projects/gmao/geos_cf_dev/obs/OMDOMINO/omiscal/nc/$Y/omiscal_2x2.5_${Ymd}.nc"
+ofile="${srcdir}/$Y/omiscal_2x2.5_${Ymd}.nc"
 if [ -e $pofile ]; then
  rfile=${pofile}
 fi 

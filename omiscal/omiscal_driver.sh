@@ -1,6 +1,5 @@
 #!/bin/bash
 # this is the driver routine to download and process DOMINO NO2 data
-
 srcdir="/discover/nobackup/projects/gmao/geos_cf_dev/obs/OMDOMINO"
 
 # parse input arguments
