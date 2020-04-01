@@ -7,6 +7,7 @@ import glob
 import argparse
 import sys
 import os
+from calendar import monthrange
 
 
 def get_omiscal(args):
@@ -50,7 +51,10 @@ def _calc_scal(args,anadate,do):
     before = 14
     after  = 7
     for i in range(args.nyears):
-        ref = dt.datetime(args.refyear-i,anadate.month,anadate.day)
+        # catch Feb 29:
+        ndays = monthrange(args.refyear-i,anadate.month)[1] 
+        iday = anadate.day if anadate.day <= ndays else ndays
+        ref = dt.datetime(args.refyear-i,anadate.month,iday)
         start = ref - dt.timedelta(days=before)
         end = ref + dt.timedelta(days=after)
         tmp = _get_average(args,start,end)
