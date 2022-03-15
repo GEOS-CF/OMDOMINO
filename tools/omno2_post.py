@@ -37,12 +37,14 @@ def main(args):
     tno2_hour[0,msk] = np.nan
 #---Get map with analysis hour, i.e., a map with the closest integer obs hour for each analysis increment
     ana_hour = _get_ana_hour(args,ana,bkg,tno2_hour)
+#---Calculate analysis increment
+    inc = ana['NO2'].values[:,:,:,:] - bkg['NO2'].values[:,:,:,:]
 #---Create new data set and write to netCDF file
     do = xr.Dataset(
        data_vars=dict(
           ana_no2=(["time","lev","lat","lon"],ana['NO2'],dict(long_name='analysis_no2',units='v/v')),
           bkg_no2=(["time","lev","lat","lon"],bkg['NO2'],dict(long_name='background_no2',units='v/v')),
-          inc_no2=(["time","lev","lat","lon"],ana['NO2']-bkg['NO2'],dict(long_name='no2_analysis_increment',units='v/v')),
+          inc_no2=(["time","lev","lat","lon"],inc,dict(long_name='no2_analysis_increment',units='v/v')),
           ana_hour=(["time","lat","lon"],ana_hour,dict(long_name='analysis_nearest_hour',units='hour')),
        ),
        coords=dict(
@@ -98,7 +100,7 @@ def _get_ana_hour(args,ana,bkg,tno2_hour):
     # assing hour from tno2 observation 
     idxs = [np.array((obslons-i)**2+(obslats-j)**2).argmin() for i,j in zip(analons,analats)]
     ana_hour[0,analatidx,analonidx] = obshour[idxs]
-    return ana_hour
+    return ana_hour, inc
 
  
 def _process_omi_file(args,anadate,ana,tno2_hour,cnt):
@@ -168,11 +170,11 @@ def _read_file(template,idate):
 
 def parse_args():
     p = argparse.ArgumentParser(description='Undef certain variables')
-    p.add_argument('-d', '--date',type=str,help='date in format %Y%m%d %H%Mz',default='20180701 1200z')
-    p.add_argument('-a', '--anafile',type=str,help='analysis file',default='/discover/nobackup/cakelle2/CDAS/runs/omno2_test/scratch/omno2_test.ana.eta.%Y%m%d_%Hz.nc4')
-    p.add_argument('-b', '--bkgfile',type=str,help='background file',default='/discover/nobackup/cakelle2/CDAS/runs/omno2_test/temp/omno2_test.cbkg.eta.%Y%m%d_%Hz.nc4')
-    p.add_argument('-s', '--satfile',type=str,help='satellite file',default='/discover/nobackup/cakelle2/CDAS/runs/omno2_test/analyze/spool/omno2.%Y%m%d.t%Hz.nc')
-    p.add_argument('-o', '--outfile',type=str,help='output file',default='ana_hours.%Y%m%d_t%Hz.nc')
+    p.add_argument('-d', '--date',type=str,help='date in format %Y%m%d_%H%Mz',default='20180701_1200z')
+    p.add_argument('-a', '--anafile',type=str,help='analysis file',default='ana.eta.nc4')
+    p.add_argument('-b', '--bkgfile',type=str,help='background file',default='cbkg.eta.nc4')
+    p.add_argument('-s', '--satfile',type=str,help='satellite file',default='omno2.%Y%m%d.t%Hz.nc')
+    p.add_argument('-o', '--outfile',type=str,help='output file',default='ana_no2.after_gsi.%Y%m%d_t%Hz.nc')
     return p.parse_args()    
 
 
