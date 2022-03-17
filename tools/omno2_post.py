@@ -39,14 +39,23 @@ def main(args):
     ana_hour = _get_ana_hour(args,ana,bkg,tno2_hour)
 #---Calculate analysis increment
     inc = ana['NO2'].values[:,:,:,:] - bkg['NO2'].values[:,:,:,:]
+#---data variables to be added to the output dataset
+    data_vars=dict(
+       ana_no2=(["time","lev","lat","lon"],ana['NO2'],dict(long_name='analysis_no2',units='v/v')),
+       bkg_no2=(["time","lev","lat","lon"],bkg['NO2'],dict(long_name='background_no2',units='v/v')),
+       inc_no2=(["time","lev","lat","lon"],inc,dict(long_name='no2_analysis_increment',units='v/v')),
+       ana_hour=(["time","lat","lon"],ana_hour,dict(long_name='analysis_nearest_hour',units='hour')),
+    )
+    # mask for each hour of the day (showing the grid cells with observations for a given hour)
+    if args.write_mask==1:
+        for h in range(24):
+            vname = 'ana_mask_H{:02d}'.format(h)
+            iarr = np.zeros(ana_hour.shape)
+            iarr[ana_hour==h] = 1.0
+            data_vars[vname] =(["time","lat","lon"],iarr,dict(long_name='analysis_mask_hour_{:02d}'.format(h),units='1'))
 #---Create new data set and write to netCDF file
     do = xr.Dataset(
-       data_vars=dict(
-          ana_no2=(["time","lev","lat","lon"],ana['NO2'],dict(long_name='analysis_no2',units='v/v')),
-          bkg_no2=(["time","lev","lat","lon"],bkg['NO2'],dict(long_name='background_no2',units='v/v')),
-          inc_no2=(["time","lev","lat","lon"],inc,dict(long_name='no2_analysis_increment',units='v/v')),
-          ana_hour=(["time","lat","lon"],ana_hour,dict(long_name='analysis_nearest_hour',units='hour')),
-       ),
+       data_vars=data_vars,
        coords=dict(
            {"time":("time",[anadate.hour+anadate.minute/60.],{"units":anadate.strftime("hours since %Y-%m-%d 00:00:00")})},
            lev=ana.lev,
@@ -100,7 +109,7 @@ def _get_ana_hour(args,ana,bkg,tno2_hour):
     # assing hour from tno2 observation 
     idxs = [np.array((obslons-i)**2+(obslats-j)**2).argmin() for i,j in zip(analons,analats)]
     ana_hour[0,analatidx,analonidx] = obshour[idxs]
-    return ana_hour, inc
+    return ana_hour
 
  
 def _process_omi_file(args,anadate,ana,tno2_hour,cnt):
@@ -175,6 +184,7 @@ def parse_args():
     p.add_argument('-b', '--bkgfile',type=str,help='background file',default='cbkg.eta.nc4')
     p.add_argument('-s', '--satfile',type=str,help='satellite file',default='omno2.%Y%m%d.t%Hz.nc')
     p.add_argument('-o', '--outfile',type=str,help='output file',default='ana_no2.after_gsi.%Y%m%d_t%Hz.nc')
+    p.add_argument('-m', '--write_mask',type=int,help='write mask file for each hour of day?',default=0)
     return p.parse_args()    
 
 
